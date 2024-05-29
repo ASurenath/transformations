@@ -5,7 +5,7 @@ import Reflection from './components/Reflection';
 
 function App() {
   return (
-    <div className="App bg-black">
+    <div className="App">
 <div>
   <Reflection></Reflection>
 </div>
