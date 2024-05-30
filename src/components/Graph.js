@@ -91,31 +91,59 @@ const rotate = ([x, y], [x1, y1], angle, isClockwise) => {
 const translate = ([x, y], [[x1, y1], [x2, y2]]) => {
   return [x + x2 - x1, y + y2 - y1]
 }
+const enlarge = ([x, y], [x1, y1], f) => {
+  return [x1 + f * (x - x1), y1 + f * (y - y1)]
+}
+const lineEquation = ([[x1, y1], [x2, y2]]) => {
+  if (x1 === x2) {
+    return `x = ${x1}`
+  }
+  else if (y1 === y2) {
+    return `y = ${y1}`
+  }
+  else {
+    let a = Math.round(((y2 - y1) / (x2 - x1)) * 1000) / 1000
+    let b = Math.round((y1 - a * x1) * 1000) / 1000
+    if (a == 1) {
+      return `y=x+${b}`
+    }
+    else if (a == -1) {
+      return `y=-x+${b}`
+    }
+    else {
+      return `y = ${a}x + ${b}`
+    }
+  }
+}
 
 function Graph({ x1, x2, y1, y2 }) {
-  const [hoveredPoint, setHoveredPoint] = useState([null, null]);
-  const [hoveredObjectPoint, setHoveredObjectPoint] = useState([null, null]);
-  const [selectedObjectPoint, setSelectedObjectPoint] = useState([]);
-
+  const [hoveredPoint, setHoveredPoint] = useState([]);
+  const [hoveredObjectPoint, setHoveredObjectPoint] = useState([]);
+  const [selectedObjectPoint, setSelectedObjectPoint] = useState([-4, 5]);
   // object
   const [objects, setObjects] = useState({ "demo": [[-4, 5], [-4, 9], [-2, 5]] });
   const [tempObjectPoints, setTempObjectPoints] = useState([]);
   const [selectedObject, setSelectedObject] = useState(null);
   const [selectionCoordinates, setSelectionCoordinates] = useState({ x1: null, x2: null, y1: null, y2: null });
   // reflection
-  const [reflectImages, setReflectImages] = useState([]);
+  const [reflectImages, setReflectImages] = useState({});
   const [mirrorLinePoints, setMirrorLinePoints] = useState([[-5, 0], [0, 5]]);
   const [tempMirrorLinePoints, setTempMirrorLinePoints] = useState([]);
+
   // rotation
   const [centerOfRotation, setCenterOfRotation] = useState([-2, 2]);
   const [isClockwise, setIsClockwise] = useState(true);
   const [rotationAngle, setRotationAngle] = useState(90);
   const [rotatedImages, setRotatedImages] = useState([]);
   //translation
-  const [transLinePoints, setTransLinePoints] = useState([]);
-  const [tempTransLinePoints, setTempTransLinePoints] = useState([]);
-  const [transVector, setTransVector] = useState([0, 0]);
-  const [transImagePoints, setTransImagePoints] = useState([]);
+  const [tempTransVector, setTempTransVector] = useState([]);
+  const [transVector, setTransVector] = useState([[0, 0], [3, 1]]);
+  const [transImages, setTransImages] = useState({});
+
+  // enlargement
+  const [enlargedImages, setEnlargedImages] = useState({});
+  const [enlargementFactor, setEnlargementFactor] = useState(2);
+  const [centerOfEnlargement, setCenterOfEnlargement] = useState([-9, 9]);
 
   const [transformation, setTransformation] = useState('reflection')
   const [tool, setTool] = useState("none")
@@ -126,8 +154,8 @@ function Graph({ x1, x2, y1, y2 }) {
   console.log("objects.flat", Object.values(objects).flat());
   console.log("objects.flat(2)", Object.values(objects).flat(2))
   console.log("selectedObject", selectedObject);
-  console.log("selectionCoordinates", selectionCoordinates);
-
+  console.log("selectedObjectPoint", selectedObjectPoint);
+  // reflection
   useEffect(() => {
     if (mirrorLinePoints.length == 2) {
       let tempReflectImages = {}
@@ -144,6 +172,7 @@ function Graph({ x1, x2, y1, y2 }) {
       setReflectImages({})
     }
   }, [objects, mirrorLinePoints]);
+  // selection coordinates
   useEffect(() => {
     if (objects[selectedObject]) {
       let tempObj = objects[selectedObject]
@@ -154,6 +183,7 @@ function Graph({ x1, x2, y1, y2 }) {
       setSelectionCoordinates({ x1: x1, x2: x2, y1: y1, y2: y2 })
     }
   }, [objects, selectedObject]);
+
   useEffect(() => {
     if (tool != "polygon") {
       setTempObjectPoints([])
@@ -165,6 +195,7 @@ function Graph({ x1, x2, y1, y2 }) {
       setSelectedObject(null)
     }
   }, [tool])
+  // rotation
   useEffect(() => {
     if (centerOfRotation) {
       let tempRotImages = {}
@@ -178,13 +209,33 @@ function Graph({ x1, x2, y1, y2 }) {
     }
   }, [objects, centerOfRotation, rotationAngle, isClockwise]);
 
-  // useEffect(() => {
-  //   if(transLinePoints.length==2 && objectPoints.length>0){
-  //     let tempObj=objectPoints
-  //     let tempImagePoints=tempObj.map((point)=>[point[0]+transVector[0],point[1]+transVector[1]])
-  //     setTransImagePoints([...tempImagePoints])
-  //   }
-  // }, [objectPoints,transLinePoints,transVector]);
+  // translation
+  useEffect(() => {
+    if (transVector.length == 2) {
+      let tempTransImages = {}
+      for (let key in objects) {
+        let tempObj = objects[key]
+        let tempImage = tempObj.map((point) => translate(point, transVector)
+        )
+        tempTransImages[key] = [...tempImage]
+      }
+      setTransImages({ ...tempTransImages })
+    }
+  }, [objects, transVector]);
+  // Enlarge
+  useEffect(() => {
+    if (enlargementFactor) {
+      let tempEnlargeImages = {}
+      for (let key in objects) {
+        let tempObj = objects[key]
+        let tempImage = tempObj.map((point) => enlarge(point, centerOfEnlargement, enlargementFactor)
+        )
+        tempEnlargeImages[key] = [...tempImage]
+      }
+      setEnlargedImages({ ...tempEnlargeImages })
+    }
+  }, [objects, centerOfEnlargement, enlargementFactor]);
+
 
   // console.log("tempLinePoints",tempLinePoints);
   // console.log("hoveredPoint",hoveredPoint);
@@ -192,11 +243,11 @@ function Graph({ x1, x2, y1, y2 }) {
 
 
   const graphBox = useRef(null);
-  const findXPosPercent = (x) => {
+  const percentX = (x) => {
     return ((x - x1) / (x2 - x1)) * 100
   };
 
-  const findYPosPercent = (y) => {
+  const percentY = (y) => {
     return ((y - y2) / (y1 - y2)) * 100
   };
   console.log(tempObjectPoints);
@@ -209,7 +260,7 @@ function Graph({ x1, x2, y1, y2 }) {
         ticks.push(
           <text
             x={((i - x1) / (x2 - x1)) * 100}
-            y={findYPosPercent(0)}
+            y={percentY(0)}
             fill="grey"
             key={`verticel-${i}`}
             dominantBaseline="text-before-edge"
@@ -234,7 +285,7 @@ function Graph({ x1, x2, y1, y2 }) {
         i != 0 &&
         ticks.push(
           <text
-            x={findXPosPercent(0)}
+            x={percentX(0)}
             y={((i - y2) / (y1 - y2)) * 100}
             style={{
               textAlign: "right",
@@ -316,7 +367,7 @@ function Graph({ x1, x2, y1, y2 }) {
         }
       }
     }
-    // else { setHoveredPoint([flagX, flagY]); }
+    else { setHoveredPoint([]); }
   };
 
   const handleClick = (e) => {
@@ -358,29 +409,41 @@ function Graph({ x1, x2, y1, y2 }) {
       setTool("select")
     }
     else if (tool == "vector") {
-      let temp = tempTransLinePoints
+      let temp = tempTransVector
       if (temp.length == 0) {
-        setTempTransLinePoints([[hoveredPoint[0], hoveredPoint[1]]])
+        setTempTransVector([[hoveredPoint[0], hoveredPoint[1]]])
       }
       else {
-        setTransLinePoints([...temp, [hoveredPoint[0], hoveredPoint[1]]])
-        setTempTransLinePoints([])
+        setTransVector([...temp, [hoveredPoint[0], hoveredPoint[1]]])
+        setTempTransVector([])
         setTool("select")
       }
     }
-    if (tool == "select") {
-      setSelectedObjectPoint([hoveredObjectPoint[0], hoveredObjectPoint[1]])
+    else if (tool == "select") {
+
+      if (hoveredObjectPoint.length > 0) { setSelectedObjectPoint([hoveredObjectPoint[0], hoveredObjectPoint[1]]) }
+      else { setSelectedObjectPoint([]) }
+    }
+    else if (tool == "enlargementCenter") {
+      setCenterOfEnlargement([hoveredPoint[0], hoveredPoint[1]])
+      setTool("select")
     }
     // setFlagX(hoveredPoint[0]);
     // setFlagY(hoveredPoint[1]);
   };
   const handleDelete = () => {
     if (selectedObject) {
+      if (selectedObjectPoint) {
+        if (objects[selectedObject].some(point => point.join(',') === `${selectedObjectPoint[0]},${selectedObjectPoint[1]}`)) {
+          setSelectedObjectPoint([])
+        }
+      }
       let tempObjects = objects
       delete tempObjects[selectedObject]
       setObjects({ ...tempObjects })
       setSelectedObject(null)
     }
+
   }
 
   return (
@@ -390,7 +453,7 @@ function Graph({ x1, x2, y1, y2 }) {
       style={{ aspectRatio: `${x2 - x1}/${y2 - y1}` }}
       ref={graphBox}
     >
-      <div className="tools fixed">
+      <div className="tools fixed flex justify-center items-center">
         <button type="button" onClick={() => setTool("polygon")} className={`m-2 bg-[${tool == "polygon" ? color2 : color1}] text-white p-1 px-2 rounded`}><i className="fa-solid fa-draw-polygon" title="Draw objects"></i></button>
         <button type="button" onClick={() => setTool("select")} active={`${tool == "select"}`} className={`m-2 bg-[${tool == "select" ? color2 : color1}] text-white p-1 px-2 rounded`} title="Select points to analyse their transformation"><i className="fa-solid fa-arrow-pointer"></i></button>
 
@@ -404,16 +467,52 @@ function Graph({ x1, x2, y1, y2 }) {
 
         </select>
 
-        {transformation == "reflection" && <button type="button" onClick={() => setTool("mirror")} active={`${tool == "mirror"}`} className={`m-2 bg-[${tool == "mirror" ? color2 : color1}] text-white p-1 px-2 rounded`} title="Draw mirror line"><i className="fa-solid fa-slash"></i></button>
-        }
+        {transformation == "reflection" &&
+          <>
+            <button type="button" onClick={() => setTool("mirror")} active={`${tool == "mirror"}`} className={`m-2 bg-[${tool == "mirror" ? color2 : color1}] text-white p-1 px-2 rounded`} title="Draw mirror line"><i className="fa-solid fa-slash"></i></button>
+            <p className="m-2 p-2 bg-white rounded border border-2 border-[${color1}]">Reflection on the line <span className="font-bold text-[#800080]">{lineEquation(mirrorLinePoints)}</span></p>
+          </>}
 
         {transformation == "rotation" && <>
-          <button type="button" onClick={() => setIsClockwise(true)} active={`${isClockwise}`} className={`m-2 p-1 px-2 rounded bg-[${isClockwise ? color2 : color1}] text-white`} title="Clockwise"><i class="fa-solid fa-rotate-right"></i></button>
-          <button type="button" onClick={() => setIsClockwise(false)} active={`${!isClockwise}`} className={`m-2 p-1 px-2 rounded bg-[${!isClockwise ? color2 : color1}] text-white`} title="Counterclockwise"><i class="fa-solid fa-rotate-left"></i></button>
-          <input type="number" onChange={(e) => { setRotationAngle(e.target.value); setTool("delete") }} value={rotationAngle} min={0} max={360} className={`p-1 bg-white rounded border border-2 border-[${color1}] focus:border-[${color2}]`} />
-          <button type="button" onClick={() => setTool("rotCenter")} active={`${tool == "rotCenter"}`} className={`m-2 bg-[${tool == "rotCenter" ? color2 : color1}] text-white p-1 px-2 rounded`} title="Mark center of rotation" ><i className="fa-solid fa-circle"></i></button></>
+          <button type="button" onClick={() => setIsClockwise(true)} active={`${isClockwise}`} className={`m-2 p-1 px-2 rounded bg-[${isClockwise ? color2 : color1}] text-white`} title="Direction-Clockwise"><i class="fa-solid fa-rotate-right"></i></button>
+          <button type="button" onClick={() => setIsClockwise(false)} active={`${!isClockwise}`} className={`m-2 p-1 px-2 rounded bg-[${!isClockwise ? color2 : color1}] text-white`} title="Direction-Counterclockwise"><i class="fa-solid fa-rotate-left"></i></button>
+          <button type="button" onClick={() => setTool("rotCenter")} active={`${tool == "rotCenter"}`} className={`m-2 bg-[${tool == "rotCenter" ? color2 : color1}] text-white p-1 px-2 rounded`} title="Mark center of rotation" ><i className="fa-solid fa-circle"></i></button>
+
+          <div class="relative mt-2 w-50 flex">
+            <input type="range" onChange={(e) => { setRotationAngle(e.target.value); setTool("select") }} value={rotationAngle} min={0} max={360} id="angle-slider" class="peer w-25" />
+            <input type="number" onChange={(e) => { setRotationAngle(e.target.value); setTool("select") }} value={rotationAngle} min={0} max={360} id="angle-input" className={`peer block w-15 p-1 bg-white rounded border border-2 border-[${color1}] focus:border-[${color2}] w-16 text-center`} placeholder=" " />
+            <label for="angle-input" class="absolute top-2 left-1 z-10 origin-[0] -translate-y-4 scale-75 transform cursor-text select-none bg-white px-2 text-sm text-gray-500 duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:-translate-y-4 peer-focus:scale-75 peer-focus:px-2 peer-focus:text-blue-600"> Rotation angle (deg) </label>
+            {/* <div class="absolute right-1 top-1/2 -translate-y-1/2 bg-white py-1 px-1 text-gray-300 peer-placeholder-shown:text-white peer-focus:text-gray-300">°</div> */}
+          </div>
+          <p className="m-2 p-2 bg-white rounded border border-2 border-[${color1}]"><span className="font-bold text-[#800080]">{rotationAngle}° </span>rotation about the point <span className="font-bold text-[#800080]">({centerOfRotation[0]}, {centerOfRotation[1]})</span> in <span className="font-bold text-[#800080]">{isClockwise ? "clockwise" : "counterclockwise"}</span> direction.</p>
+
+
+        </>}
+        {transformation == "translation" && 
+<>
+          <button type="button" onClick={() => setTool("vector")} active={`${tool == "vector"}`} className={`m-2 bg-[${tool == "rotCenter" ? color2 : color1}] text-white p-1 px-3 rounded`} title="Draw translation vector"><i class="fa-solid fa-arrow-up-long fa-rotate-by" style={{ '--fa-rotate-angle': '45deg' }} /></button>
+          <p className="m-2 p-2 bg-white rounded border border-2 border-[${color1}]">Translation by the vector <div className="inline-flex text-[#800080] text-3xl p-0">[<div className="inline-flex flex-col text-sm justify-center"><p className="p-0 m-0">{transVector[1][0]-transVector[0][0]}</p><p className="p-0 m-0">{transVector[1][1]-transVector[0][1]}</p></div>]</div></p>
+
+</>        
         }
-        {transformation == "translation" && <button type="button" onClick={() => setTool("vector")} active={`${tool == "vector"}`} className="m-2">Tranaslation vector</button>}
+        {transformation == "enlargement" &&
+          <>
+            <button type="button" onClick={() => setTool("enlargementCenter")} active={`${tool == "enlargementCenter"}`} className={`m-2 bg-[${tool == "enlargementCenter" ? color2 : color1}] text-white p-1 px-2 rounded`} title="Mark center of enlargement" ><i className="fa-solid fa-circle"></i></button>
+
+            <div class="mt-0 w-50 flex">
+              <div className="peer w-25 flex flex-col">
+                <label for="e-factor-input" class="scale-75 select-none bg-white px-2 text-sm text-gray-500 my-0"> Enlargement&nbsp;factor </label>
+                <input type="range" onChange={(e) => { setEnlargementFactor(e.target.value); setTool("select") }} value={enlargementFactor} min={-10} max={10} id="e-factor-slider" step={0.1} />
+                <div className="w-75 flex justify-between my-0 text-gray-500 text-sm "><div className="color-gray">-10</div><div>0</div><div>10</div></div>
+              </div>
+
+              <input type="number" onChange={(e) => { setEnlargementFactor(e.target.value); setTool("select") }} value={enlargementFactor} min={-10} max={10} id="e-factor-input" className={`peer block w-15 m-1 bg-white rounded border border-2 border-[${color1}] focus:border-[${color2}] w-16 text-center h-11`} placeholder=" " step={0.1} />
+
+            </div>
+            <p className="m-2 p-2 bg-white rounded border border-2 border-[${color1}]"> Enlargement w.r.t. the point <span className="font-bold text-[#800080]">({centerOfEnlargement[0]}, {centerOfEnlargement[1]} )</span> by the factor <span className="font-bold text-[#800080]">{enlargementFactor}</span>. </p>
+
+
+          </>}
       </div>
       <svg
         height="100%"
@@ -432,33 +531,40 @@ function Graph({ x1, x2, y1, y2 }) {
         // onTouchEnd={(e) => {
         //   handleClick(e);
         // }}
-        style={{ cursor: (tool == "polygon" || tool == "rotCenter" || tool == "vector" || tool == "mirror") ? "crosshair" : tool == "delete" ? "url('minus-cursor.png'), auto" : "default" }}
+        className={`${tool == "polygon" && 'cursor-cross-polygon'} ${tool == "mirror" && 'cursor-cross-line'} ${tool == "delete" && 'cursor-arrow-trash'} ${tool == "rotCenter" && 'cursor-cross-point'} ${tool == "vector" && 'cursor-cross-vector'}`}
       >
         {renderVerticleLines()}
         {renderHorizentalLines()}
         {renderXticks()}
         {renderYticks()}
-
-        {(tool == "mirror" || tool == "polygon" || tool == "rotCenter") && renderRipple(
-          findXPosPercent(hoveredPoint[0]),
-          findYPosPercent(hoveredPoint[1])
+        <defs>
+          <marker id="arrow" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L5,2.5 L0,5" fill="none" stroke="grey" stroke-width="1" />
+          </marker>
+          <marker id="vector-arrow" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L5,2.5 L0,5" fill="none" stroke="purple" stroke-width="1" />
+          </marker>
+        </defs>
+        {(tool == "mirror" || tool == "polygon" || tool == "rotCenter" || tool == "vector" || tool == "enlargementCenter") && renderRipple(
+          percentX(hoveredPoint[0]),
+          percentY(hoveredPoint[1])
         )}
         {(tool == "select") && renderRipple(
-          findXPosPercent(hoveredObjectPoint[0]),
-          findYPosPercent(hoveredObjectPoint[1])
+          percentX(hoveredObjectPoint[0]),
+          percentY(hoveredObjectPoint[1])
         )}
 
         {/* object */}
         {tool === "polygon" && <>
-          <polyline points={tempObjectPoints.map(coord => `${findXPosPercent(coord[0])},${findYPosPercent(coord[1])}`).join(' ')} stroke={color1} fill="none" strokeWidth={.1}></polyline>
-          {tempObjectPoints.length > 0 && <line x1={findXPosPercent(tempObjectPoints?.[tempObjectPoints.length - 1]?.[0])} y1={findYPosPercent(tempObjectPoints?.[tempObjectPoints.length - 1]?.[1])} x2={findXPosPercent(hoveredPoint[0])} y2={findYPosPercent(hoveredPoint[1])} stroke="lightgrey" fill="none" strokeWidth={.1}></line>
+          <polyline points={tempObjectPoints.map(coord => `${percentX(coord[0])},${percentY(coord[1])}`).join(' ')} stroke={color1} fill="none" strokeWidth={.1}></polyline>
+          {tempObjectPoints.length > 0 && <line x1={percentX(tempObjectPoints?.[tempObjectPoints.length - 1]?.[0])} y1={percentY(tempObjectPoints?.[tempObjectPoints.length - 1]?.[1])} x2={percentX(hoveredPoint[0])} y2={percentY(hoveredPoint[1])} stroke="lightgrey" fill="none" strokeWidth={.1}></line>
           }
-          {tempObjectPoints?.map(coord => <circle cx={findXPosPercent(coord[0])} cy={findYPosPercent(coord[1])} r={.5} fill={color1} />)}
+          {tempObjectPoints?.map(coord => <circle cx={percentX(coord[0])} cy={percentY(coord[1])} r={.5} fill={color1} />)}
 
         </>}
         {
           Object.keys(objects).map((key) =>
-            <polygon points={objects?.[key]?.map(coord => `${findXPosPercent(coord[0])},${findYPosPercent(coord[1])}`).join(' ')} stroke={color1} fill={color1} fillOpacity={.5} strokeWidth={.3} onClick={() => { tool == "delete" && setSelectedObject(key) }}></polygon>
+            <polygon points={objects?.[key]?.map(coord => `${percentX(coord[0])},${percentY(coord[1])}`).join(' ')} stroke={color1} fill={color1} fillOpacity={.5} strokeWidth={.3} onClick={() => { tool == "delete" && setSelectedObject(key) }}></polygon>
           )
         }
 
@@ -466,61 +572,106 @@ function Graph({ x1, x2, y1, y2 }) {
 
 
         {/* reflection */}
-        {transformation == "reflection" && <>{tempMirrorLinePoints.length == 1 && renderLine(findXPosPercent(tempMirrorLinePoints[0][0]), findYPosPercent(tempMirrorLinePoints[0][1]), findXPosPercent(hoveredPoint[0]), findYPosPercent(hoveredPoint[1]), 0, 100, 0, 100, `${color2}`, 0.1, "0.5 0.5")}
-          {mirrorLinePoints.length > 1 && renderLine(findXPosPercent(mirrorLinePoints[0][0]), findYPosPercent(mirrorLinePoints[0][1]), findXPosPercent(mirrorLinePoints[1][0]), findYPosPercent(mirrorLinePoints[1][1]), 0, 100, 0, 100, `purple`, 0.3, "0.5 0.5")}
-          {tempMirrorLinePoints.length == 1 && <circle cx={findXPosPercent(tempMirrorLinePoints[0][0])} cy={findYPosPercent(tempMirrorLinePoints[0][1])} r="0.5" fill="blue" />}
-          {tempMirrorLinePoints.length == 1 && <circle cx={findXPosPercent(hoveredPoint[0])} cy={findYPosPercent(hoveredPoint[1])} r="0.5" fill="blue" />}
+        {transformation == "reflection" && <>{tempMirrorLinePoints.length == 1 && renderLine(percentX(tempMirrorLinePoints[0][0]), percentY(tempMirrorLinePoints[0][1]), percentX(hoveredPoint[0]), percentY(hoveredPoint[1]), 0, 100, 0, 100, `${color2}`, 0.1, "0.5 0.5")}
+          {mirrorLinePoints.length > 1 && renderLine(percentX(mirrorLinePoints[0][0]), percentY(mirrorLinePoints[0][1]), percentX(mirrorLinePoints[1][0]), percentY(mirrorLinePoints[1][1]), 0, 100, 0, 100, `purple`, 0.3, "0.5 0.5")}
+          {tempMirrorLinePoints.length == 1 &&
+            <><circle cx={percentX(tempMirrorLinePoints[0][0])} cy={percentY(tempMirrorLinePoints[0][1])} r="0.5" fill="purple" />
+              <circle cx={percentX(hoveredPoint[0])} cy={percentY(hoveredPoint[1])} r="0.5" fill="purple" />
+
+            </>
+          }
           {Object.keys(reflectImages).map((key) =>
-            <polygon points={reflectImages?.[key]?.map(coord => `${findXPosPercent(coord[0])},${findYPosPercent(coord[1])}`).join(' ')} stroke={color2} fill={color2} fillOpacity={.5} strokeWidth={.3}></polygon>
+            <polygon points={reflectImages?.[key]?.map(coord => `${percentX(coord[0])},${percentY(coord[1])}`).join(' ')} stroke={color2} fill={color2} fillOpacity={.5} strokeWidth={.3}></polygon>
           )}</>
         }
         {/* rotation */}
         {transformation == "rotation" && <>
-          {centerOfRotation ? <circle cx={findXPosPercent(centerOfRotation[0])} cy={findYPosPercent(centerOfRotation[1])} r="0.5" fill={'purple'} /> : null}
+          {centerOfRotation ? <circle cx={percentX(centerOfRotation[0])} cy={percentY(centerOfRotation[1])} r="0.5" fill={'purple'} /> : null}
           {Object.keys(rotatedImages).map((key) =>
-            <polygon points={rotatedImages?.[key]?.map(coord => `${findXPosPercent(coord[0])},${findYPosPercent(coord[1])}`).join(' ')} stroke={color2} fill={color2} fillOpacity={.5} strokeWidth={.3}></polygon>
+            <polygon points={rotatedImages?.[key]?.map(coord => `${percentX(coord[0])},${percentY(coord[1])}`).join(' ')} stroke={color2} fill={color2} fillOpacity={.5} strokeWidth={.3}></polygon>
           )}
-          {/* <polygon id="test" points={rotatedImages?.map(coord => `${findXPosPercent(coord[0])},${findYPosPercent(coord[1])}`).join(' ')} stroke={color2} fill={color2} fillOpacity={.5} strokeWidth={.3}></polygon> */}
+          {/* <polygon id="test" points={rotatedImages?.map(coord => `${percentX(coord[0])},${percentY(coord[1])}`).join(' ')} stroke={color2} fill={color2} fillOpacity={.5} strokeWidth={.3}></polygon> */}
         </>
         }
         {/* translation */}
         {transformation == "translation" && <>
-          {transLinePoints.length > 1 && <line x1={findXPosPercent(transLinePoints[0][0])} y1={findYPosPercent(transLinePoints[0][1])} x2={findXPosPercent(transLinePoints[1][0])} y2={findYPosPercent(transLinePoints[1][1])} stroke="green" strokeWidth='0.3' strokeDasharray="none" />}
-          {tempTransLinePoints.length == 1 && <circle cx={findXPosPercent(tempTransLinePoints[0][0])} cy={findYPosPercent(tempTransLinePoints[0][1])} r="0.5" fill="blue" />}
-          {tempTransLinePoints.length == 1 && <circle cx={findXPosPercent(hoveredPoint[0])} cy={findYPosPercent(hoveredPoint[1])} r="0.5" fill="blue" />}
+          {transVector.length > 1 && <line x1={percentX(transVector[0][0])} y1={percentY(transVector[0][1])} x2={percentX(transVector[1][0])} y2={percentY(transVector[1][1])} stroke="purple" strokeWidth='0.2' strokeDasharray="none" markerEnd="url(#vector-arrow)" />}
+
+          {tempTransVector.length == 1 && <>
+            <circle cx={percentX(tempTransVector[0][0])} cy={percentY(tempTransVector[0][1])} r="0.5" fill="purple" />
+            <circle cx={percentX(hoveredPoint[0])} cy={percentY(hoveredPoint[1])} r="0.5" fill="purple" />
+            <line x1={percentX(tempTransVector[0][0])} y1={percentY(tempTransVector[0][1])} x2={percentX(hoveredPoint[0])} y2={percentY(hoveredPoint[1])} stroke={color2} strokeWidth='0.1' strokeDasharray="0.5 0.5" />
+          </>}
+
+          {Object.keys(transImages).map((key) =>
+            <polygon points={transImages?.[key]?.map(coord => `${percentX(coord[0])},${percentY(coord[1])}`).join(' ')} stroke={color2} fill={color2} fillOpacity={.5} strokeWidth={.3}></polygon>
+          )}
+
+        </>}
+        {/* enlarge */}
+        {transformation == "enlargement" && <>
+          {centerOfEnlargement && <circle cx={percentX(centerOfEnlargement[0])} cy={percentY(centerOfEnlargement[1])} r="0.5" fill={'purple'} />}
+          {Object.keys(enlargedImages).map((key) =>
+            <polygon points={enlargedImages?.[key]?.map(coord => `${percentX(coord[0])},${percentY(coord[1])}`).join(' ')} stroke={color2} fill={color2} fillOpacity={.5} strokeWidth={.3}></polygon>
+          )}
 
         </>}
         {/* selection  for delete*/}
         {selectedObject &&
           <g>
-            <rect x={findXPosPercent(selectionCoordinates.x1)} height={findYPosPercent(selectionCoordinates.y1) - findYPosPercent(selectionCoordinates.y2)} y={findYPosPercent(selectionCoordinates.y2)} width={findXPosPercent(selectionCoordinates.x2) - findXPosPercent(selectionCoordinates.x1)} stroke={color1} fill="none" strokeWidth='0.2' strokeDasharray="0.5 0.3" />
+            <rect x={percentX(selectionCoordinates.x1)} height={percentY(selectionCoordinates.y1) - percentY(selectionCoordinates.y2)} y={percentY(selectionCoordinates.y2)} width={percentX(selectionCoordinates.x2) - percentX(selectionCoordinates.x1)} stroke={color1} fill="none" strokeWidth='0.2' strokeDasharray="0.5 0.3" />
             <g onClick={handleDelete} className="cursor-pointer">
-              <rect x={findXPosPercent(selectionCoordinates.x2) - 1} height={2} y={findYPosPercent(selectionCoordinates.y2) - 1} width={2} rx={1} ry={1} stroke={color1} fill="white" strokeWidth='0.1'></rect>
-              <text x={findXPosPercent(selectionCoordinates.x2)} y={findYPosPercent(selectionCoordinates.y2)} fill={color1} fontSize={2} textAnchor="middle" dominantBaseline="middle">x</text>
+              <rect x={percentX(selectionCoordinates.x2) - 1} height={2} y={percentY(selectionCoordinates.y2) - 1} width={2} rx={1} ry={1} stroke={color1} fill="white" strokeWidth='0.1'></rect>
+              <text x={percentX(selectionCoordinates.x2)} y={percentY(selectionCoordinates.y2)} fill={color1} fontSize={2} textAnchor="middle" dominantBaseline="middle">x</text>
             </g>
           </g>
         }
         {/* point selection */}
-        {selectedObjectPoint && transformation=="reflection" &&
+        {selectedObjectPoint.length > 0 && transformation == "reflection" &&
           <g>
-            <circle cx={findXPosPercent(selectedObjectPoint[0])} cy={findYPosPercent(selectedObjectPoint[1])} r="0.5" fill={color1} />
-            <circle cx={findXPosPercent(reflect(selectedObjectPoint, mirrorLinePoints)[0])} cy={findYPosPercent(reflect(selectedObjectPoint, mirrorLinePoints)[1])} r="0.5" fill={color2} />
-            <line x1={findXPosPercent(selectedObjectPoint[0])} y1={findYPosPercent(selectedObjectPoint[1])} x2={findXPosPercent(reflect(selectedObjectPoint, mirrorLinePoints)[0])} y2={findYPosPercent(reflect(selectedObjectPoint, mirrorLinePoints)[1])} stroke="grey" strokeWidth='0.2' strokeDasharray="none" />
+            <circle cx={percentX(selectedObjectPoint[0])} cy={percentY(selectedObjectPoint[1])} r="0.5" fill={color1} />
+            <circle cx={percentX(reflect(selectedObjectPoint, mirrorLinePoints)[0])} cy={percentY(reflect(selectedObjectPoint, mirrorLinePoints)[1])} r="0.5" fill={color2} />
+            <line x1={percentX(selectedObjectPoint[0])} y1={percentY(selectedObjectPoint[1])} x2={percentX(reflect(selectedObjectPoint, mirrorLinePoints)[0])} y2={percentY(reflect(selectedObjectPoint, mirrorLinePoints)[1])} stroke="grey" strokeWidth='0.2' strokeDasharray="none" />
 
           </g>
         }
         {
-          selectedObjectPoint[0] && transformation=="rotation" &&
+          selectedObjectPoint.length > 0 && transformation == "rotation" &&
           <g>
-            <circle cx={findXPosPercent(selectedObjectPoint[0])} cy={findYPosPercent(selectedObjectPoint[1])} r="0.5" fill={color1} />
-            <circle cx={findXPosPercent(rotate(selectedObjectPoint, centerOfRotation,rotationAngle,isClockwise)[0])} cy={findYPosPercent(rotate(selectedObjectPoint, centerOfRotation,rotationAngle,isClockwise)[1])} r="0.5" fill={color2} />
-            <line x1={findXPosPercent(selectedObjectPoint[0])} y1={findYPosPercent(selectedObjectPoint[1])} x2={findXPosPercent(centerOfRotation[0])} y2={findYPosPercent(centerOfRotation[1])} stroke="grey" strokeWidth='0.2' strokeDasharray="none" />
-             <line x1={findXPosPercent(rotate(selectedObjectPoint, centerOfRotation,rotationAngle,isClockwise)[0])} y1={findYPosPercent(rotate(selectedObjectPoint, centerOfRotation,rotationAngle,isClockwise)[1])} x2={findXPosPercent(centerOfRotation[0])} y2={findYPosPercent(centerOfRotation[1])} stroke="grey" strokeWidth='0.2' strokeDasharray="none" />
-            </g>
+            <circle cx={percentX(selectedObjectPoint[0])} cy={percentY(selectedObjectPoint[1])} r="0.5" fill={color1} />
+            <circle cx={percentX(rotate(selectedObjectPoint, centerOfRotation, rotationAngle, isClockwise)[0])} cy={percentY(rotate(selectedObjectPoint, centerOfRotation, rotationAngle, isClockwise)[1])} r="0.5" fill={color2} />
+            <line x1={percentX(selectedObjectPoint[0])} y1={percentY(selectedObjectPoint[1])} x2={percentX(centerOfRotation[0])} y2={percentY(centerOfRotation[1])} stroke="grey" strokeWidth='0.2' strokeDasharray="none" />
+            <line x1={percentX(rotate(selectedObjectPoint, centerOfRotation, rotationAngle, isClockwise)[0])} y1={percentY(rotate(selectedObjectPoint, centerOfRotation, rotationAngle, isClockwise)[1])} x2={percentX(centerOfRotation[0])} y2={percentY(centerOfRotation[1])} stroke="grey" strokeWidth='0.2' strokeDasharray="none" />
+            <path id="arc" d={`M${percentX((selectedObjectPoint[0] + 2 * centerOfRotation[0]) / 3)}
+             ${percentY((selectedObjectPoint[1] + 2 * centerOfRotation[1]) / 3)} 
+            A ${Math.sqrt(((percentX(selectedObjectPoint[0]) - percentX(centerOfRotation[0])) ** 2) + ((percentY(selectedObjectPoint[1]) - percentY(centerOfRotation[1])) ** 2)) / 3}
+             ${Math.sqrt(((percentX(selectedObjectPoint[0]) - percentX(centerOfRotation[0])) ** 2) + ((percentY(selectedObjectPoint[1]) - percentY(centerOfRotation[1])) ** 2)) / 3}
+              1 ${rotationAngle > 180 ? 1 : 0} ${isClockwise ? 1 : 0} 
+              ${percentX((rotate(selectedObjectPoint, centerOfRotation, rotationAngle, isClockwise)[0] + 2 * centerOfRotation[0]) / 3)} 
+              ${percentY((rotate(selectedObjectPoint, centerOfRotation, rotationAngle, isClockwise)[1] + 2 * centerOfRotation[1]) / 3)}`} stroke="grey" strokeWidth='0.2' strokeDasharray="none" fill="none" markerEnd={(rotationAngle > 0 && rotationAngle < 360) && 'url(#arrow)'} />
+            {rotationAngle == 360 &&
+              <circle cx={percentX(centerOfRotation[0])} cy={percentY(centerOfRotation[1])} r={Math.sqrt(((percentX(selectedObjectPoint[0]) - percentX(centerOfRotation[0])) ** 2) + ((percentY(selectedObjectPoint[1]) - percentY(centerOfRotation[1])) ** 2)) / 3} fill="none" stroke="grey" strokeWidth='0.2' />
+            }
+          </g>
         }
+        {selectedObjectPoint.length > 0 && transformation == "translation" &&
+          <>
+            <circle cx={percentX(selectedObjectPoint[0])} cy={percentY(selectedObjectPoint[1])} r="0.5" fill={color1} />
+            <circle cx={percentX(translate(selectedObjectPoint, transVector)[0])} cy={percentY(translate(selectedObjectPoint, transVector)[1])} r="0.5" fill={color2} />
+            <line x1={percentX(selectedObjectPoint[0])} y1={percentY(selectedObjectPoint[1])} x2={percentX(translate(selectedObjectPoint, transVector)[0])} y2={percentY(translate(selectedObjectPoint, transVector)[1])} stroke="grey" strokeWidth='0.2' strokeDasharray="none" markerEnd="url(#arrow)" />
+          </>
 
+        }
+        {selectedObjectPoint.length > 0 && transformation == "enlargement" &&
+          <>
+            <circle cx={percentX(selectedObjectPoint[0])} cy={percentY(selectedObjectPoint[1])} r="0.5" fill={color1} />
+            <circle cx={percentX(enlarge(selectedObjectPoint, centerOfEnlargement, enlargementFactor)[0])} cy={percentY(enlarge(selectedObjectPoint, centerOfEnlargement, enlargementFactor)[1])} r="0.5" fill={color2} />
+            <line x1={percentX(selectedObjectPoint[0])} y1={percentY(selectedObjectPoint[1])} x2={percentX(enlarge(selectedObjectPoint, centerOfEnlargement, enlargementFactor)[0])} y2={percentY(enlarge(selectedObjectPoint, centerOfEnlargement, enlargementFactor)[1])} stroke="grey" strokeWidth='0.2' strokeDasharray="none" markerEnd="url(#arrow)" />
+            <line x1={percentX(selectedObjectPoint[0])} y1={percentY(selectedObjectPoint[1])} x2={percentX(centerOfEnlargement[0])} y2={percentY(centerOfEnlargement[1])} stroke="grey" strokeWidth='0.2' strokeDasharray="1 1" />
+          </>}
 
       </svg>
+
     </div>
   );
 }

@@ -1,38 +1,15 @@
-.App {
-  text-align: center;
+.cursor-cross-point{
+  cursor:url('../public/cross-point.png') 11 11 ,auto;
 }
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.cursor-cross-polygon{
+  cursor:url('../public/cross-polygon.png') 11 11 ,auto;
 }
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.cursor-cross-line{
+  cursor:url('../public/cross-line.png') 11 11 ,auto;
 }
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.cursor-cross-vector{
+  cursor:url('../public/cross-vector.png') 11 11 ,auto;
 }
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.cursor-arrow-trash{
+  cursor:url('../public/arrow-trash.png') ,auto;
 }
