@@ -1,14 +1,11 @@
 import logo from './logo.svg';
 import './App.css';
 import Graph from './components/Graph';
-import Reflection from './components/Reflection';
 
 function App() {
   return (
     <div className="App">
-<div>
-  <Reflection></Reflection>
-</div>
+        <Graph x1={-50} x2={50} y1={-50} y2={50} ></Graph>
     </div>
   );
 }

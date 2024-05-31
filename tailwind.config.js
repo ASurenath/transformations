@@ -6,6 +6,8 @@ module.exports = {
   safelist: [
     'bg-[#1783b8]',
     'bg-[#4dc0ae]',
+    'text-[#1783b8]',
+    'text-[#4dc0ae]',
     'border-[#1783b8]',
     'border-[#4dc0ae]',
   ],
