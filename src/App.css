@@ -33,10 +33,33 @@
 }
 .info-box{
   background-color: white;
-  padding: 20px;
-  padding-top: 5px;
+  padding: 10px;
   border-radius: 10px;
-  max-height: 90vh;
+  width:min(600px, 100%);  
+}
+.info-inner-box{
+  padding: 10px;
+  padding-top: 2px;
+  border-radius: 10px;
+  max-height: 80vh;
   overflow-y: auto;
   width:min(600px, 100%);  
+
+}
+.help{
+  background-color: rgba(0, 0, 0, 0.861);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+}
+.help-glow{
+  filter: drop-shadow(0 0 20px white) drop-shadow(0 0 10px white);
+}
+.help-center{
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
