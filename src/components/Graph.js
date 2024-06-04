@@ -145,6 +145,7 @@ function Graph({ x1, x2, y1, y2 }) {
   const [showInfo, setShowInfo] = useState(false);
   const [showHelp1, setShowHelp1] = useState(true);
   const [showHelp2, setShowHelp2] = useState(false);
+  const [isVisited, setIsVisited] = useState({rotation:false,translation:false,enlargement:false});
 
   // object
   const [objects, setObjects] = useState({
@@ -162,7 +163,15 @@ function Graph({ x1, x2, y1, y2 }) {
     y1: null,
     y2: null,
   });
-
+useEffect(()=>{
+  if(transformation!=="reflection"){
+    if(!isVisited[transformation]){
+      setShowHelp2(true);
+      setIsVisited({...isVisited,[transformation]:true})
+    }
+  }
+},[transformation])
+console.log(isVisited);
   // reflection
   const [reflectImages, setReflectImages] = useState({});
   const [mirrorLinePoints, setMirrorLinePoints] = useState([
@@ -197,12 +206,6 @@ function Graph({ x1, x2, y1, y2 }) {
   const color2 = "#4dc0ae";
   const zoomFactor = 30;
   console.log(objects);
-
-  // console.log("objects", objects);
-  // console.log("objects.flat", Object.values(objects).flat());
-  // console.log("objects.flat(2)", Object.values(objects).flat(2))
-  // console.log("selectedObject", selectedObject);
-  // console.log("selectedObjectPoint", selectedObjectPoint);
 
   const renderRipple = (x, y) => {
     return (
@@ -446,12 +449,10 @@ function Graph({ x1, x2, y1, y2 }) {
     if (scrollBox.current) {
       let focusX = oldScrollX + scrollBox.current.clientWidth / 2;
       let focusY = oldScrollY + scrollBox.current.clientHeight / 2;
-      // console.log("scrollBox.current", scrollBox.current);
       const scrollLeft =
         (focusX * z) / oldZoom - scrollBox.current.clientWidth / 2 || 0;
       const scrollTop =
         (focusY * z) / oldZoom - scrollBox.current.clientHeight / 2 || 0;
-      // console.log("scrollTop", scrollTop, "scrollLeft", scrollLeft);
       scrollBox.current.scrollTop = scrollTop;
       scrollBox.current.scrollLeft = scrollLeft;
     }
@@ -506,71 +507,6 @@ function Graph({ x1, x2, y1, y2 }) {
     }
   };
 
-  // const handleClickOld = (e) => {
-  //   if(e.type=="click"){
-  //   if (tool == "polygon") {
-  //     let temp = tempObjectPoints
-  //     // console.log(temp.length);
-  //     // if(temp.length<=1){
-  //     //   setObjectPoints([])
-  //     // }
-  //     if (temp.some(point => point.join(',') === `${hoveredPoint[0]},${hoveredPoint[1]}`)) {
-  //       let id = Math.random().toString(36).slice(2, 7);
-  //       while (Object.keys(objects).includes(id)) {
-  //         id = Math.random().toString(36).slice(2, 7)
-  //       }
-  //       setObjects({ ...objects, [id]: [...tempObjectPoints] })
-  //       setTempObjectPoints([])
-  //       console.log("includes");
-  //       // setTool("select")
-  //     }
-  //     else {
-  //       console.log("not includes");
-  //       setTempObjectPoints([...tempObjectPoints, [hoveredPoint[0], hoveredPoint[1]]])
-  //     }
-  //   }
-  //   else if (tool == "mirror") {
-  //     let temp = tempMirrorLinePoints
-  //     // console.log(temp.length);
-  //     if (temp.length == 0) {
-  //       setTempMirrorLinePoints([[hoveredPoint[0], hoveredPoint[1]]])
-  //     }
-  //     else {
-  //       setMirrorLinePoints([...temp, [hoveredPoint[0], hoveredPoint[1]]])
-  //       setTempMirrorLinePoints([])
-  //       setTool("select")
-  //     }
-  //   }
-  //   else if (tool == "rotCenter") {
-  //     setCenterOfRotation([hoveredPoint[0], hoveredPoint[1]])
-  //     setTool("select")
-  //   }
-  //   else if (tool == "vector") {
-  //     let temp = tempTransVector
-  //     if (temp.length == 0) {
-  //       setTempTransVector([[hoveredPoint[0], hoveredPoint[1]]])
-  //     }
-  //     else {
-  //       setTransVector([...temp, [hoveredPoint[0], hoveredPoint[1]]])
-  //       setTempTransVector([])
-  //       setTool("select")
-  //     }
-  //   }
-  //   else if (tool == "select") {
-
-  //     if (hoveredObjectPoint.length > 0) { setSelectedObjectPoint([hoveredObjectPoint[0], hoveredObjectPoint[1]]) }
-  //     else { setSelectedObjectPoint([]) }
-  //   }
-  //   else if (tool == "enlargementCenter") {
-  //     setCenterOfEnlargement([hoveredPoint[0], hoveredPoint[1]])
-  //     setTool("select")
-  //   }}
-  //   else{
-  //     handleTouch(e)
-  //   }
-  //   // setFlagX(hoveredPoint[0]);
-  //   // setFlagY(hoveredPoint[1]);
-  // };
   const handleClick = (e) => {
     let rect = graphBox.current.getBoundingClientRect();
     let x =
@@ -777,7 +713,7 @@ function Graph({ x1, x2, y1, y2 }) {
                 >
                   <i className="fa-solid fa-slash"></i>
                 </button>
-                <p className="mx-1 p-1 bg-white rounded border border-2 border-[${color1}]">
+                <p className={`mx-1 p-1 bg-white rounded border border-2 border-[${color1}]`}>
                   Reflection on the line{" "}
                   <span className="font-bold text-[#800080]">
                     {lineEquation(mirrorLinePoints)}
@@ -1705,13 +1641,14 @@ function Graph({ x1, x2, y1, y2 }) {
       {showInfo &&
         transformation == "enlargement" &&
         info.enlargement(() => setShowInfo(false))}
-      {/* {showHelp1 && (
+      {showHelp1 && (
         <Help
           helpFor={"general"}
           handleClose={() => {
             setShowHelp1(false);
             setShowHelp2(true);
           }}
+          handleClose2={()=>{setShowHelp1(false)}}
         />
       )}
       {showHelp2 && transformation == "reflection" && (
@@ -1725,7 +1662,7 @@ function Graph({ x1, x2, y1, y2 }) {
       )}
       {showHelp2 && transformation == "enlargement" && (
         <Help helpFor={"enlargement"} handleClose={() => setShowHelp2(false)} />
-      )} */}
+      )}
     </>
   );
 }

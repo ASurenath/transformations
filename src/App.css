@@ -54,9 +54,15 @@
   width: 100vw;
   height: 100vh;
   z-index: 9999;
+  overflow: auto;
 }
 .help-glow{
   filter: drop-shadow(0 0 20px white) drop-shadow(0 0 10px white);
+}
+.help-glow-box{
+  border:2px solid white;
+  border-radius: 20px;
+  overflow-y: auto;
 }
 .help-center{
   display: flex;
