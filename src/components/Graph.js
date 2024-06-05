@@ -146,6 +146,9 @@ function Graph({ x1, x2, y1, y2 }) {
   const [showHelp1, setShowHelp1] = useState(true);
   const [showHelp2, setShowHelp2] = useState(false);
   const [isVisited, setIsVisited] = useState({rotation:false,translation:false,enlargement:false});
+  const [showDeletePrompt, setShowDeletePrompt] = useState(false);
+const [showCoords, setShowCoords] = useState(false);
+const [showAngle, setShowAngle] = useState(false);
 
   // object
   const [objects, setObjects] = useState({
@@ -171,7 +174,7 @@ useEffect(()=>{
     }
   }
 },[transformation])
-console.log(isVisited);
+// console.log(isVisited);
   // reflection
   const [reflectImages, setReflectImages] = useState({});
   const [mirrorLinePoints, setMirrorLinePoints] = useState([
@@ -205,7 +208,7 @@ console.log(isVisited);
   const color1 = "#1783b8";
   const color2 = "#4dc0ae";
   const zoomFactor = 30;
-  console.log(objects);
+  // console.log(objects);
 
   const renderRipple = (x, y) => {
     return (
@@ -465,12 +468,12 @@ console.log(isVisited);
     if (scrollBox.current) {
       let focusX = oldScrollX + x;
       let focusY = oldScrollY + y;
-      console.log("scrollBox.current", scrollBox.current);
+      // console.log("scrollBox.current", scrollBox.current);
       const scrollLeft =
         (focusX * z) / oldZoom - scrollBox.current.clientWidth / 2 || 0;
       const scrollTop =
         (focusY * z) / oldZoom - scrollBox.current.clientHeight / 2 || 0;
-      console.log("scrollTop", scrollTop, "scrollLeft", scrollLeft);
+      // console.log("scrollTop", scrollTop, "scrollLeft", scrollLeft);
       scrollBox.current.scrollTop = scrollTop;
       scrollBox.current.scrollLeft = scrollLeft;
     }
@@ -620,6 +623,36 @@ console.log(isVisited);
       setSelectedObject(null);
     }
   };
+  const renderScaleDescription = (f) => {
+    if (f == 1) {
+      return "Image has same size as object";
+    } else if (f == 0) {
+      return "Image is a point at the center of enlargement"
+    }
+    else if(f==-1){
+      return "Image has same size as the object but it's inverted as the scale factor is negative";
+    }
+     else if (f >1) {
+      return "Image is bigger than the object as magnitude of the scale factor is greater than 1";
+    }
+    else if (f >0) {
+      return "Image is smaller than the object as magnitude of the scale factor is less than 1";
+    }
+    else if(f>-1){
+      return "Image is smaller than the object as the scale factor has a magnitude less than 1. And it's inverted as the scale factor is negative";
+    }
+    else{
+      return "Image is bigger than the object as the scale factor has a magnitude greater than 1. And it's inverted as the scale factor is negative";
+    }
+  }
+  const coordPos=([x1,y1],[x2,y2])=>{
+    if(x1===x2&&y1===y2){
+      return [percentX(x1+1),percentY(y1+1)]
+    }
+    let coords=[percentX(x1+(x1-x2)/Math.sqrt((x1-x2)**2+(y1-y2)**2)),percentY(y1+(y1-y2)/Math.sqrt((x1-x2)**2+(y1-y2)**2))]
+    console.log(coords);
+    return coords
+  }
 
   return (
     <>
@@ -635,7 +668,7 @@ console.log(isVisited);
       >
         <div
           id="graph-main"
-          className="graph mx-auto bg-light"
+          className="graph mx-auto bg-light select-none"
           style={{ aspectRatio: `${x2 - x1}/${y2 - y1}` }}
           ref={graphBox}
         >
@@ -664,16 +697,33 @@ console.log(isVisited);
             </button>
             <button
               type="button"
-              onClick={() => {
-                setObjects({});
-                setSelectedObjectPoint([]);
-                setSelectedObject(null);
-              }}
+              onClick={()=>setShowDeletePrompt(true)}
               className={`m-1 bg-[${color1}] text-white p-1 px-2 rounded`}
               title="Delete all objects"
             >
               <i className="fa-solid fa-trash"></i>
             </button>
+            <hr className="w-full" />
+            <button
+              type="button"
+              onClick={() =>setShowCoords(!showCoords)}
+              className={`m-1 bg-[${
+                showCoords ? color2 : color1
+              }] text-white p-1 px-0.5 rounded ${(!showCoords) &&'crossed'}`}
+              title={`${showCoords ? "Hide" : "Show"} coordinates of selected vertex`}
+            >
+              (x,y)
+            </button>
+            {/* <button
+              type="button"
+              onClick={() => setShowAngle(!showAngle)}
+              className={`m-1 bg-[${
+                showAngle ? color2 : color1
+              }] text-white p-1 px-2 rounded`}
+              title="Zoom out"
+            >
+              θ°
+            </button> */}
           </div>
           <div
             className="tools fixed flex flex-wrap justify-start items-start p-1"
@@ -724,29 +774,39 @@ console.log(isVisited);
 
             {transformation == "rotation" && (
               <>
-                <button
-                  type="button"
-                  onClick={() => setIsClockwise(false)}
-                  active={`${!isClockwise}`}
-                  className={`mx-1 p-1 px-2 rounded bg-[${
-                    !isClockwise ? color2 : color1
-                  }] text-white`}
-                  title="Direction-Counterclockwise"
-                >
-                  <i class="fa-solid fa-rotate-left"></i>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsClockwise(true)}
-                  active={`${isClockwise}`}
-                  className={`mx-1 p-1 px-2 rounded bg-[${
-                    isClockwise ? color2 : color1
-                  }] text-white`}
-                  title="Direction-Clockwise"
-                >
-                  <i class="fa-solid fa-rotate-right"></i>
-                </button>
+                <div className="flex flex-col items-center relative">
+                <span
+                    for="angle-input"
+                    class="absolute top-2 left-1 z-10 origin-[0] -translate-y-4 scale-75 transform cursor-text select-none bg-white px-2 text-sm text-gray-500 duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:-translate-y-4 peer-focus:scale-75 peer-focus:px-2 peer-focus:text-blue-600"
+                  >
+                    Direction
+                  </span>
+                  <div className="flex items-center justify-center mt-2 z-10">
+                    <button
+                      type="button"
+                      onClick={() => setIsClockwise(false)}
+                      active={`${!isClockwise}`}
+                      className={`mx-0.5 p-0 px-2 rounded bg-[${
+                        !isClockwise ? color2 : color1
+                      }] text-white`}
+                      title="Direction-Counterclockwise"
+                    >
+                      <i class="fa-solid fa-rotate-left fa-xs"></i>
+                    </button>
+    
+                    <button
+                      type="button"
+                      onClick={() => setIsClockwise(true)}
+                      active={`${isClockwise}`}
+                      className={`mx-0.5 p-0 px-2 rounded bg-[${
+                        isClockwise ? color2 : color1
+                      }] text-white`}
+                      title="Direction-Clockwise"
+                    >
+                      <i class="fa-solid fa-rotate-right fa-xs"></i>
+                    </button>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={() => setTool("rotCenter")}
@@ -775,7 +835,9 @@ console.log(isVisited);
                   <input
                     type="number"
                     onChange={(e) => {
-                      setRotationAngle(e.target.value);
+                      if(e.target.value>360){setRotationAngle(360);}
+                      else if(e.target.value<0){setRotationAngle(0);}
+                      else{setRotationAngle(e.target.value);}
                       setTool("select");
                     }}
                     value={rotationAngle}
@@ -867,7 +929,11 @@ console.log(isVisited);
                     <input
                       type="range"
                       onChange={(e) => {
-                        setEnlargementFactor(e.target.value);
+                        if(e.target.value<-10){setEnlargementFactor(-10);}
+                        else if(e.target.value>10){setEnlargementFactor(10);}
+                        else{
+                          setEnlargementFactor(e.target.value);
+                        }
                         setTool("select");
                       }}
                       value={enlargementFactor}
@@ -908,7 +974,7 @@ console.log(isVisited);
                   <span className="font-bold text-[#800080]">
                     {enlargementFactor}
                   </span>
-                  .{" "}
+                  . {renderScaleDescription(enlargementFactor)}
                 </p>
               </>
             )}
@@ -1027,6 +1093,8 @@ console.log(isVisited);
                   strokeWidth="1"
                 />
               </marker>
+              
+              
             </defs>
             {(tool == "mirror" ||
               tool == "polygon" ||
@@ -1043,7 +1111,7 @@ console.log(isVisited);
                 percentY(hoveredObjectPoint[1])
               )}
 
-            {/* object */}
+            {/* object  drawing*/}
             {tool === "polygon" && (
               <>
                 <polyline
@@ -1084,28 +1152,7 @@ console.log(isVisited);
                 ))}
               </>
             )}
-            {Object.keys(objects).map((key) => (
-              <>
-                <polygon
-                  key={`object-${key}`}
-                  name="objects"
-                  className="objects-polygons"
-                  points={objects?.[key]
-                    ?.map(
-                      (coord) => `${percentX(coord[0])},${percentY(coord[1])}`
-                    )
-                    .join(" ")}
-                  stroke={color1}
-                  fill={color1}
-                  fillOpacity={0.5}
-                  strokeWidth={15 / zoom}
-                  onClick={() => {
-                    tool == "select" && setSelectedObject(key);
-                    console.log("object selected");
-                  }}
-                ></polygon>
-              </>
-            ))}
+
 
             {/* reflection */}
             {transformation == "reflection" && (
@@ -1295,6 +1342,29 @@ console.log(isVisited);
                 ))}
               </>
             )}
+                        {/* objects */}
+            {Object.keys(objects).map((key) => (
+              <>
+                <polygon
+                  key={`object-${key}`}
+                  name="objects"
+                  className="objects-polygons"
+                  points={objects?.[key]
+                    ?.map(
+                      (coord) => `${percentX(coord[0])},${percentY(coord[1])}`
+                    )
+                    .join(" ")}
+                  stroke={color1}
+                  fill={color1}
+                  fillOpacity={0.5}
+                  strokeWidth={15 / zoom}
+                  onClick={() => {
+                    tool == "select" && setSelectedObject(key);
+                    // console.log("object selected");
+                  }}
+                ></polygon>
+              </>
+            ))}
             {/* selection  for delete*/}
             {selectedObject && (
               <g>
@@ -1378,6 +1448,34 @@ console.log(isVisited);
                     strokeWidth={10 / zoom}
                     strokeDasharray="none"
                   />
+                  {showCoords && (
+                    <>
+                    <text
+                      name="selected-coordinates"
+                      x={coordPos(selectedObjectPoint,reflect(selectedObjectPoint, mirrorLinePoints))[0]}
+                        y={coordPos(selectedObjectPoint,reflect(selectedObjectPoint, mirrorLinePoints))[1]}
+                      fill={'grey'}
+                      fontSize={80 / zoom}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      className="text-outline"
+                    >
+                      {`(${Math.round(selectedObjectPoint[0]*10)/10},${Math.round(selectedObjectPoint[1]*10)/10})`}
+                    </text>
+                      <text
+                        name="reflection-coordinates"
+                        x={coordPos(reflect(selectedObjectPoint, mirrorLinePoints),selectedObjectPoint)[0]}
+                        y={coordPos(reflect(selectedObjectPoint, mirrorLinePoints),selectedObjectPoint)[1]}
+                        fill={'grey'}
+                        fontSize={80 / zoom}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="text-outline"
+                      >
+                        {`(${Math.round(reflect(selectedObjectPoint, mirrorLinePoints)[0]*10)/10},${Math.round(reflect(selectedObjectPoint, mirrorLinePoints)[1]*10)/10})`}
+                      </text>
+                    </>
+                  )}
                 </g>
               )}
             {selectedObjectPoint.length > 0 && transformation == "rotation" && (
@@ -1501,6 +1599,7 @@ console.log(isVisited);
                   markerEnd={
                     rotationAngle > 0 && rotationAngle < 360 && "url(#arrow)"
                   }
+                  
                 />
                 {rotationAngle == 360 && (
                   <circle
@@ -1522,6 +1621,38 @@ console.log(isVisited);
                     strokeWidth={10 / zoom}
                   />
                 )}
+                <g id="angle-label">
+                <rect x={percentX((rotate(selectedObjectPoint,centerOfRotation,rotationAngle/2, isClockwise)[0]+(2 * centerOfRotation[0])) / 3)-60/zoom} y={percentY((rotate(selectedObjectPoint,centerOfRotation,rotationAngle/2, isClockwise)[1]+(2 * centerOfRotation[1])) / 3)-40/zoom} width={120/zoom} height={80/zoom} fill="white" opacity={0.6} rx={50/zoom} ry={50/zoom} />
+    <text x={percentX((rotate(selectedObjectPoint,centerOfRotation,rotationAngle/2, isClockwise)[0]+(2 * centerOfRotation[0])) / 3)} y={percentY((rotate(selectedObjectPoint,centerOfRotation,rotationAngle/2, isClockwise)[1]+(2 * centerOfRotation[1])) / 3)} fill="black" dominant-baseline="middle" alignmentBaseline="middle" text-anchor="middle" fontSize={40 / zoom}>{rotationAngle}°</text>
+  </g>
+                {showCoords && (
+                    <>
+                    <text
+                      name="selected-coordinates"
+                      x={coordPos(selectedObjectPoint,rotate(selectedObjectPoint, centerOfRotation, rotationAngle, isClockwise))[0]}
+                        y={coordPos(selectedObjectPoint,rotate(selectedObjectPoint, centerOfRotation, rotationAngle, isClockwise))[1]}
+                      fill={'grey'}
+                      fontSize={80 / zoom}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      className="text-outline"
+                    >
+                      {`(${Math.round(selectedObjectPoint[0]*10)/10},${Math.round(selectedObjectPoint[1]*10)/10})`}
+                    </text>
+                      <text
+                        name="rottated-coordinates"
+                        x={coordPos(rotate(selectedObjectPoint, centerOfRotation, rotationAngle, isClockwise),selectedObjectPoint)[0]}
+                        y={coordPos(rotate(selectedObjectPoint, centerOfRotation, rotationAngle, isClockwise),selectedObjectPoint)[1]}
+                        fill={'grey'}
+                        fontSize={80 / zoom}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="text-outline"
+                      >
+                        {`(${Math.round(rotate(selectedObjectPoint, centerOfRotation, rotationAngle, isClockwise)[0]*10)/10},${Math.round(rotate(selectedObjectPoint, centerOfRotation, rotationAngle, isClockwise)[1]*10)/10})`}
+                      </text>
+                    </>
+                  )}
               </g>
             )}
             {selectedObjectPoint.length > 0 &&
@@ -1560,6 +1691,34 @@ console.log(isVisited);
                     strokeDasharray="none"
                     markerEnd="url(#arrow)"
                   />
+                  {showCoords && (
+                    <>
+                    <text
+                      name="selected-coordinates"
+                      x={coordPos(selectedObjectPoint,translate(selectedObjectPoint, transVector))[0]}
+                        y={coordPos(selectedObjectPoint,translate(selectedObjectPoint, transVector))[1]}
+                      fill={'grey'}
+                      fontSize={80 / zoom}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      className="text-outline"
+                    >
+                      {`(${Math.round(selectedObjectPoint[0]*10)/10},${Math.round(selectedObjectPoint[1]*10)/10})`}
+                    </text>
+                      <text
+                        name="translated-coordinates"
+                        x={coordPos(translate(selectedObjectPoint, transVector),selectedObjectPoint)[0]}
+                        y={coordPos(translate(selectedObjectPoint, transVector),selectedObjectPoint)[1]}
+                        fill={'grey'}
+                        fontSize={80 / zoom}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="text-outline"
+                      >
+                        {`(${Math.round(translate(selectedObjectPoint, transVector)[0]*10)/10},${Math.round(translate(selectedObjectPoint, transVector)[1]*10)/10})`}
+                      </text>
+                    </>
+                  )}
                 </>
               )}
             {selectedObjectPoint.length > 0 &&
@@ -1624,6 +1783,34 @@ console.log(isVisited);
                     strokeWidth={10 / zoom}
                     strokeDasharray={`${20 / zoom} ${10 / zoom}`}
                   />
+                  {showCoords && (
+                    <>
+                    <text
+                      name="selected-coordinates"
+                      x={coordPos(selectedObjectPoint,enlarge(selectedObjectPoint, centerOfEnlargement, enlargementFactor))[0]}
+                        y={coordPos(selectedObjectPoint,enlarge(selectedObjectPoint, centerOfEnlargement, enlargementFactor))[1]}
+                      fill={'grey'}
+                      fontSize={80 / zoom}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      className="text-outline"
+                    >
+                      {`(${Math.round(selectedObjectPoint[0]*10)/10},${Math.round(selectedObjectPoint[1]*10)/10})`}
+                    </text>
+                      <text
+                        name="enlarged-coordinates"
+                        x={coordPos(enlarge(selectedObjectPoint, centerOfEnlargement, enlargementFactor),selectedObjectPoint)[0]}
+                        y={coordPos(enlarge(selectedObjectPoint, centerOfEnlargement, enlargementFactor),selectedObjectPoint)[1]}
+                        fill={'grey'}
+                        fontSize={80 / zoom}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="text-outline"
+                      >
+                        {`(${Math.round(enlarge(selectedObjectPoint, centerOfEnlargement, enlargementFactor)[0]*10)/10},${Math.round(enlarge(selectedObjectPoint, centerOfEnlargement, enlargementFactor)[1]*10)/10})`}
+                      </text>
+                    </>
+                  )}
                 </>
               )}
           </svg>
@@ -1641,6 +1828,12 @@ console.log(isVisited);
       {showInfo &&
         transformation == "enlargement" &&
         info.enlargement(() => setShowInfo(false))}
+{showDeletePrompt&&info.delete(()=>setShowDeletePrompt(false),() => {
+                setObjects({});
+                setSelectedObjectPoint([]);
+                setSelectedObject(null);
+              })}
+
       {showHelp1 && (
         <Help
           helpFor={"general"}
@@ -1663,6 +1856,12 @@ console.log(isVisited);
       {showHelp2 && transformation == "enlargement" && (
         <Help helpFor={"enlargement"} handleClose={() => setShowHelp2(false)} />
       )}
+
+{/* onClick={() => {
+                setObjects({});
+                setSelectedObjectPoint([]);
+                setSelectedObject(null);
+              }} */}
     </>
   );
 }

@@ -108,7 +108,7 @@ export const info = {
         );
     }
     ,
-    help: (handleClose) => {
+    delete: (handleClose,handleDelete) => {
         const handleClickOutside = (event) => {
             if (!event.target.closest('.info-box')) {
                 // If the clicked element is not within the .info-box, close the info box
@@ -123,11 +123,12 @@ export const info = {
                         <button type="button" onClick={handleClose} className="text-black p-4"><i className="fa-solid fa-x"/></button>
                     </div>
                     <div className="info-inner-box">
-                        <h1 className={`text-center text-3xl font-bold`} style={{ color: color2 }}>Help</h1>
-                        <p>This app is for the visualization of different types of transformations, such as <spam style={{color:"purple"}}>reflection</spam>, <span style={{color:"purple"}}>rotation</span>, <span style={{color:"purple"}}>translation</span> and <span style={{color:"purple"}}>enlargement</span>.
-                        You can draw objects and select each transformations you want to see how the object tranforms. You can also change the different parameters of the transformations.
-                         
-                        </p>
+                        <h1 className={`text-center text-3xl font-bold mb-5`}>Are you sure you want to delete <b>all objects</b>?</h1>
+                        <div className="flex justify-evenly">
+                        <button className={`bg-[${color1}] text-white rounded-md px-4 py-2`} onClick={handleClose} type="button">No, cancel</button>
+
+                            <button className="bg-red-400 text-white rounded-md px-4 py-2" onClick={()=>{handleDelete();handleClose()}} type="button">Yes, delete all objects</button>
+                             </div>
                     </div>
                 </div>
             </div>
