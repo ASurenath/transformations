@@ -441,7 +441,7 @@ function Help({ handleClose, handleClose2, helpFor }) {
                 </span>{" "}
                 tool to draw your{" "}
                 <span className={`text-[${color1}]`}>objects</span>. Select this
-                tool and click on the grid where you whant the vertices to be.
+                tool and click on the grid to place your vertices.
                 {renderSkipBtn(true)}
               </p>
             )}
